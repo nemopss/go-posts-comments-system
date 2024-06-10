@@ -5,33 +5,39 @@ import (
 	"github.com/nemopss/go-posts-comments-system/internal/repository"
 )
 
+// TODO: fix commentType
+
 // NewSchema создаёт новую GraphQl схему, используя переданный репозиторий
 func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 	// Создаём новый resolver
 	resolver := NewResolver(repo)
 
-	// Определяем тип comment для GraphQl схемы
-	commentType := graphql.NewObject(graphql.ObjectConfig{
+	var commentType *graphql.Object
+
+	commentType = graphql.NewObject(graphql.ObjectConfig{
 		Name: "Comment",
-		Fields: graphql.Fields{
-			"id": &graphql.Field{
-				Type: graphql.NewNonNull(graphql.ID),
-			},
-			"postId": &graphql.Field{
-				Type: graphql.NewNonNull(graphql.ID),
-			},
-			"parentId": &graphql.Field{
-				Type: graphql.ID,
-			},
-			"content": &graphql.Field{
-				Type: graphql.NewNonNull(graphql.String),
-			},
-			// "children": &graphql.Field{
-			// 	Type:    graphql.NewList(commentType),
-			// 	Resolve: resolver.ResolveCommentChildren,
-			// },
-		},
+		Fields: graphql.FieldsThunk(func() graphql.Fields {
+			return graphql.Fields{
+				"id": &graphql.Field{
+					Type: graphql.NewNonNull(graphql.ID),
+				},
+				"postId": &graphql.Field{
+					Type: graphql.NewNonNull(graphql.ID),
+				},
+				"parentId": &graphql.Field{
+					Type: graphql.ID,
+				},
+				"content": &graphql.Field{
+					Type: graphql.NewNonNull(graphql.String),
+				},
+				"children": &graphql.Field{
+					Type:    graphql.NewList(commentType),
+					Resolve: resolver.ResolveCommentChildren,
+				},
+			}
+		}),
 	})
+
 	// Определяем тип post для GraphQl схемы
 	postType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Post",
