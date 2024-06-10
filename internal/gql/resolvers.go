@@ -2,6 +2,7 @@ package gql
 
 import (
 	"github.com/graphql-go/graphql"
+	"github.com/nemopss/go-posts-comments-system/internal/models"
 	"github.com/nemopss/go-posts-comments-system/internal/repository"
 )
 
@@ -45,4 +46,18 @@ func (r *Resolver) CreateComment(params graphql.ResolveParams) (interface{}, err
 	parentId := params.Args["parentId"].(string)
 	content := params.Args["content"].(string)
 	return r.repo.CreateComment(postId, parentId, content)
+}
+
+// ResolvePostComments возвращает список комментариев для заданного поста.
+// Этот метод вызывается при запросе поля `comments` внутри объекта `Post` в схеме GraphQL.
+func (r *Resolver) ResolvePostComments(p graphql.ResolveParams) (interface{}, error) {
+	post := p.Source.(*models.Post)
+	return r.repo.GetCommentsByPostID(post.ID)
+}
+
+// ResolveCommentChildren возвращает список дочерних комментариев для заданного комментария.
+// Этот метод вызывается при запросе поля `children` внутри объекта `Comment` в схеме GraphQL.
+func (r *Resolver) ResolveCommentChildren(p graphql.ResolveParams) (interface{}, error) {
+	comment := p.Source.(*models.Comment)
+	return r.repo.GetCommentsByParentID(comment.ID)
 }
