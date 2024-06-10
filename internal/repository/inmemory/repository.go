@@ -7,11 +7,13 @@ import (
 	"github.com/nemopss/go-posts-comments-system/internal/models"
 )
 
+// InMemoryRepository представляет репозиторий, хранящий данные в памяти.
 type InMemoryRepository struct {
 	posts    map[string]*models.Post
 	comments map[string]*models.Comment
 }
 
+// NewInMemoryRepository создает новый репозиторий в памяти.
 func NewInMemoryRepository() *InMemoryRepository {
 	return &InMemoryRepository{
 		posts:    make(map[string]*models.Post),
@@ -19,6 +21,7 @@ func NewInMemoryRepository() *InMemoryRepository {
 	}
 }
 
+// GetPosts возвращает все посты из репозитория.
 func (repo *InMemoryRepository) GetPosts() ([]*models.Post, error) {
 	posts := []*models.Post{}
 	for _, post := range repo.posts {
@@ -27,6 +30,7 @@ func (repo *InMemoryRepository) GetPosts() ([]*models.Post, error) {
 	return posts, nil
 }
 
+// GetPost возвращает пост по его ID. Если пост не найден, возвращает ошибку.
 func (repo *InMemoryRepository) GetPost(id string) (*models.Post, error) {
 	post, ok := repo.posts[id]
 	if !ok {
@@ -35,6 +39,7 @@ func (repo *InMemoryRepository) GetPost(id string) (*models.Post, error) {
 	return post, nil
 }
 
+// CreatePost создает новый пост и добавляет его в репозиторий.
 func (repo *InMemoryRepository) CreatePost(title, content string, commentsDisabled bool) (*models.Post, error) {
 	id := uuid.New().String()
 	post := &models.Post{
@@ -47,6 +52,7 @@ func (repo *InMemoryRepository) CreatePost(title, content string, commentsDisabl
 	return post, nil
 }
 
+// CreateComment создает новый комментарий и добавляет его в репозиторий.
 func (repo *InMemoryRepository) CreateComment(postId, parentId, content string) (*models.Comment, error) {
 	id := uuid.New().String()
 	comment := &models.Comment{
