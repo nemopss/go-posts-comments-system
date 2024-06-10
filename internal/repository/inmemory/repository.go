@@ -2,6 +2,7 @@ package inmemory
 
 import (
 	"errors"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/nemopss/go-posts-comments-system/internal/models"
@@ -23,6 +24,7 @@ func NewInMemoryRepository() *InMemoryRepository {
 
 // GetPosts возвращает все посты из репозитория.
 func (repo *InMemoryRepository) GetPosts() ([]*models.Post, error) {
+	log.Println("GetPosts called")
 	posts := []*models.Post{}
 	for _, post := range repo.posts {
 		posts = append(posts, post)
@@ -41,6 +43,7 @@ func (repo *InMemoryRepository) GetPost(id string) (*models.Post, error) {
 
 // CreatePost создает новый пост и добавляет его в репозиторий.
 func (repo *InMemoryRepository) CreatePost(title, content string, commentsDisabled bool) (*models.Post, error) {
+	log.Println("CreatePost called")
 	id := uuid.New().String()
 	post := &models.Post{
 		ID:               id,
@@ -49,6 +52,7 @@ func (repo *InMemoryRepository) CreatePost(title, content string, commentsDisabl
 		CommentsDisabled: commentsDisabled,
 	}
 	repo.posts[id] = post
+	log.Println("Created post with ID:", id)
 	return post, nil
 }
 

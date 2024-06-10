@@ -1,6 +1,8 @@
 package gql
 
 import (
+	"log"
+
 	"github.com/graphql-go/graphql"
 	"github.com/nemopss/go-posts-comments-system/internal/models"
 	"github.com/nemopss/go-posts-comments-system/internal/repository"
@@ -14,12 +16,14 @@ type Resolver struct {
 
 // NewResolver создаёт новый экземпляр Resolver с заданным репозиторием.
 func NewResolver(repo repository.Repository) *Resolver {
+	log.Println("Creating resolver...")
 	return &Resolver{repo: repo}
 }
 
 // QueryPosts возвращает список всех постов.
 // Этот метод вызывается при запросе поля `posts` в схеме GraphQL.
 func (r *Resolver) QueryPosts(params graphql.ResolveParams) (interface{}, error) {
+	log.Println("Quering posts...")
 	return r.repo.GetPosts()
 }
 
@@ -27,6 +31,8 @@ func (r *Resolver) QueryPosts(params graphql.ResolveParams) (interface{}, error)
 // Этот метод вызывается при запросе поля `post` с идентификатором `id` в схеме GraphQL.
 func (r *Resolver) QueryPost(params graphql.ResolveParams) (interface{}, error) {
 	id := params.Args["id"].(string)
+
+	log.Println("Quering post...")
 	return r.repo.GetPost(id)
 }
 
@@ -36,6 +42,7 @@ func (r *Resolver) CreatePost(params graphql.ResolveParams) (interface{}, error)
 	title := params.Args["title"].(string)
 	content := params.Args["content"].(string)
 	commentsDisabled := params.Args["commentsDisabled"].(bool)
+	log.Println("Creating post...")
 	return r.repo.CreatePost(title, content, commentsDisabled)
 }
 
@@ -45,6 +52,7 @@ func (r *Resolver) CreateComment(params graphql.ResolveParams) (interface{}, err
 	postId := params.Args["postId"].(string)
 	parentId := params.Args["parentId"].(string)
 	content := params.Args["content"].(string)
+	log.Println("Creating comment...")
 	return r.repo.CreateComment(postId, parentId, content)
 }
 

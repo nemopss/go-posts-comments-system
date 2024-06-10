@@ -10,9 +10,28 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 	// Создаём новый resolver
 	resolver := NewResolver(repo)
 
-	// Определяем тип commentType для последующей инициализации
-	var commentType *graphql.Object
-
+	// Определяем тип comment для GraphQl схемы
+	commentType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "Comment",
+		Fields: graphql.Fields{
+			"id": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.ID),
+			},
+			"postId": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.ID),
+			},
+			"parentId": &graphql.Field{
+				Type: graphql.ID,
+			},
+			"content": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.String),
+			},
+			// "children": &graphql.Field{
+			// 	Type:    graphql.NewList(commentType),
+			// 	Resolve: resolver.ResolveCommentChildren,
+			// },
+		},
+	})
 	// Определяем тип post для GraphQl схемы
 	postType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Post",
@@ -36,35 +55,13 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 		},
 	})
 
-	// Определяем тип comment для GraphQl схемы
-	commentType = graphql.NewObject(graphql.ObjectConfig{
-		Name: "Comment",
-		Fields: graphql.Fields{
-			"id": &graphql.Field{
-				Type: graphql.NewNonNull(graphql.ID),
-			},
-			"postId": &graphql.Field{
-				Type: graphql.NewNonNull(graphql.ID),
-			},
-			"parentId": &graphql.Field{
-				Type: graphql.ID,
-			},
-			"content": &graphql.Field{
-				Type: graphql.NewNonNull(graphql.String),
-			},
-			"children": &graphql.Field{
-				Type:    graphql.NewList(commentType),
-				Resolve: resolver.ResolveCommentChildren,
-			},
-		},
-	})
-
 	// Определяем корневой тип Query для GraphQl схемы
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
 			"posts": &graphql.Field{
-				Type: graphql.NewList(postType),
+				Type:    graphql.NewList(postType),
+				Resolve: resolver.QueryPosts,
 			},
 			"post": &graphql.Field{
 				Type: postType,
@@ -95,6 +92,7 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 						Type: graphql.NewNonNull(graphql.Boolean),
 					},
 				},
+				Resolve: resolver.CreatePost,
 			},
 			"createComment": &graphql.Field{
 				Type: commentType,
@@ -114,10 +112,23 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 		},
 	})
 
+	subscriptionType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "Subscription",
+		Fields: graphql.Fields{
+			"newPost": &graphql.Field{
+				Type: postType,
+			},
+			"newComment": &graphql.Field{
+				Type: commentType,
+			},
+		},
+	})
+
 	// Создаём конфиг схемы
 	schemaConfig := graphql.SchemaConfig{
-		Query:    queryType,
-		Mutation: mutationType,
+		Query:        queryType,
+		Mutation:     mutationType,
+		Subscription: subscriptionType,
 	}
 
 	return graphql.NewSchema(schemaConfig)
