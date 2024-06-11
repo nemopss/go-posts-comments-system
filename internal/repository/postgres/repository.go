@@ -2,6 +2,9 @@ package postgres
 
 import (
 	"database/sql"
+	"log"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/nemopss/go-posts-comments-system/internal/models"
 )
@@ -18,7 +21,7 @@ func NewPostgresRepository(db *sql.DB) *PostgresRepository {
 
 // GetPosts возвращает список всех постов
 func (repo *PostgresRepository) GetPosts() ([]*models.Post, error) {
-	rows, err := repo.db.Query("SELECT id, title, content, comments_disabled FROM posts")
+	rows, err := repo.db.Query("SELECT id, title, content, comments_disabled, created_at FROM posts")
 	if err != nil {
 		return nil, err
 	}
@@ -28,13 +31,13 @@ func (repo *PostgresRepository) GetPosts() ([]*models.Post, error) {
 
 	for rows.Next() {
 		post := &models.Post{}
-		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.CommentsDisabled)
+		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.CommentsDisabled, &post.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
 
 		// Получаем комментарии для данного поста
-		comments, err := repo.GetCommentsByPostID(post.ID)
+		comments, err := repo.GetCommentsByPostID(post.ID, 0, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -60,16 +63,18 @@ func (repo *PostgresRepository) GetPost(id string) (*models.Post, error) {
 // CreatePost создает новый пост
 func (repo *PostgresRepository) CreatePost(title, content string, commentsDisabled bool) (*models.Post, error) {
 	id := uuid.New().String()
-	_, err := repo.db.Exec("INSERT INTO posts (id, title, content, comments_disabled) VALUES ($1, $2, $3, $4)", id, title, content, commentsDisabled)
+	createdAt := time.Now()
+	_, err := repo.db.Exec("INSERT INTO posts (id, title, content, comments_disabled, created_at) VALUES ($1, $2, $3, $4, $5)", id, title, content, commentsDisabled, createdAt)
 	if err != nil {
 		return nil, err
 	}
-	return &models.Post{ID: id, Title: title, Content: content, CommentsDisabled: commentsDisabled}, nil
+	return &models.Post{ID: id, Title: title, Content: content, CommentsDisabled: commentsDisabled, CreatedAt: createdAt}, nil
 }
 
 // CreateComment создает новый комментарий
 func (repo *PostgresRepository) CreateComment(postId, parentId, content string) (*models.Comment, error) {
 	id := uuid.New().String()
+	createdAt := time.Now()
 	tx, err := repo.db.Begin()
 	if err != nil {
 		return nil, err
@@ -83,7 +88,7 @@ func (repo *PostgresRepository) CreateComment(postId, parentId, content string) 
 		parentIdSQL = parentId
 	}
 
-	_, err = tx.Exec("INSERT INTO comments (id, post_id, parent_id, content) VALUES ($1, $2, $3, $4)", id, postId, parentIdSQL, content)
+	_, err = tx.Exec("INSERT INTO comments (id, post_id, parent_id, content, created_at) VALUES ($1, $2, $3, $4, $5)", id, postId, parentIdSQL, content, createdAt)
 	if err != nil {
 		return nil, err
 	}
@@ -100,17 +105,36 @@ func (repo *PostgresRepository) CreateComment(postId, parentId, content string) 
 		return nil, err
 	}
 
-	return &models.Comment{ID: id, PostID: postId, ParentID: &parentId, Content: content}, nil
+	return &models.Comment{ID: id, PostID: postId, ParentID: &parentId, Content: content, CreatedAt: createdAt}, nil
 }
 
-// GetCommentsByPostID возвращает список комментариев для указанного поста
-func (repo *PostgresRepository) GetCommentsByPostID(postId string) ([]*models.Comment, error) {
-	rows, err := repo.db.Query(`
-		SELECT c.id, c.post_id, c.parent_id, c.content 
-		FROM comments c
-		LEFT JOIN pairs p ON c.id = p.child_id
-		WHERE c.post_id = $1 AND c.parent_id IS NULL
-	`, postId)
+// GetCommentsByPostID возвращает список комментариев для указанного поста с пагинацией
+func (repo *PostgresRepository) GetCommentsByPostID(postId string, first int64, after *string) ([]*models.Comment, error) {
+	query := `
+        SELECT c.id, c.post_id, c.parent_id, c.content, c.created_at
+        FROM comments c
+        LEFT JOIN pairs p ON c.id = p.child_id
+        WHERE c.post_id = $1 AND c.parent_id IS NULL
+        ORDER BY c.created_at
+        LIMIT $2
+    `
+	args := []interface{}{postId, first}
+
+	if after != nil {
+		query = `
+        SELECT c.id, c.post_id, c.parent_id, c.content, c.created_at
+        FROM comments c
+        LEFT JOIN pairs p ON c.id = p.child_id
+		WHERE c.post_id = $1 AND c.parent_id IS NULL AND c.id > $3::uuid
+        ORDER BY c.created_at
+        LIMIT $2
+    `
+		args = append(args, *after)
+	}
+	for i := range args {
+		log.Printf("arg[%v] = %v", i, args[i])
+	}
+	rows, err := repo.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -120,22 +144,36 @@ func (repo *PostgresRepository) GetCommentsByPostID(postId string) ([]*models.Co
 
 	for rows.Next() {
 		comment := &models.Comment{}
-		err := rows.Scan(&comment.ID, &comment.PostID, &comment.ParentID, &comment.Content)
+		err := rows.Scan(&comment.ID, &comment.PostID, &comment.ParentID, &comment.Content, &comment.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
 		comments = append(comments, comment)
 	}
+	// log.Printf("Returning comments...")
+	// for _, comm := range comments {
+	// 	log.Printf("comm: %v", comm.Content)
+	// }
 	return comments, nil
 }
 
-// GetCommentsByParentID возвращает список дочерних комментариев для указанного комментария
-func (repo *PostgresRepository) GetCommentsByParentID(parentId string) ([]*models.Comment, error) {
-	rows, err := repo.db.Query(`
-		SELECT c.id, c.post_id, c.parent_id, c.content
+// GetCommentsByParentID возвращает список дочерних комментариев для указанного комментария с пагинацией
+func (repo *PostgresRepository) GetCommentsByParentID(parentId string, first int64, after *string) ([]*models.Comment, error) {
+	query := `
+		SELECT c.id, c.post_id, c.parent_id, c.content, c.created_at
 		FROM comments c
 		WHERE c.parent_id = $1
-	`, parentId)
+		ORDER BY c.created_at
+		LIMIT $2
+	`
+	args := []interface{}{parentId, first}
+
+	if after != nil {
+		query += "AND c.id > $3"
+		args = append(args, *after)
+	}
+
+	rows, err := repo.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -145,12 +183,13 @@ func (repo *PostgresRepository) GetCommentsByParentID(parentId string) ([]*model
 
 	for rows.Next() {
 		comment := &models.Comment{}
-		err := rows.Scan(&comment.ID, &comment.PostID, &comment.ParentID, &comment.Content)
+		err := rows.Scan(&comment.ID, &comment.PostID, &comment.ParentID, &comment.Content, &comment.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
 		comments = append(comments, comment)
 	}
+
 	return comments, nil
 }
 

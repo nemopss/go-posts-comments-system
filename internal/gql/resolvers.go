@@ -56,18 +56,20 @@ func (r *Resolver) CreateComment(params graphql.ResolveParams) (interface{}, err
 	return r.repo.CreateComment(postId, parentId, content)
 }
 
-// ResolvePostComments возвращает список комментариев для заданного поста.
-// Этот метод вызывается при запросе поля `comments` внутри объекта `Post` в схеме GraphQL.
+// ResolvePostComments возвращает список комментариев для заданного поста с пагинацией
 func (r *Resolver) ResolvePostComments(p graphql.ResolveParams) (interface{}, error) {
 	post := p.Source.(*models.Post)
-	return r.repo.GetCommentsByPostID(post.ID)
+	first, _ := p.Args["first"].(int64)
+	after, _ := p.Args["after"].(string)
+	return r.repo.GetCommentsByPostID(post.ID, first, &after)
 }
 
-// ResolveCommentChildren возвращает список дочерних комментариев для заданного комментария.
-// Этот метод вызывается при запросе поля `children` внутри объекта `Comment` в схеме GraphQL.
+// ResolveCommentChildren возвращает список дочерних комментариев для заданного комментария с пагинацией
 func (r *Resolver) ResolveCommentChildren(p graphql.ResolveParams) (interface{}, error) {
 	comment := p.Source.(*models.Comment)
-	return r.repo.GetCommentsByParentID(comment.ID)
+	first, _ := p.Args["first"].(int64)
+	after, _ := p.Args["after"].(string)
+	return r.repo.GetCommentsByParentID(comment.ID, first, &after)
 }
 
 // DeletePost удаляет пост по его ID

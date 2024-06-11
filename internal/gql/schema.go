@@ -28,6 +28,9 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 				"content": &graphql.Field{
 					Type: graphql.NewNonNull(graphql.String),
 				},
+				"createdAt": &graphql.Field{
+					Type: graphql.NewNonNull(graphql.DateTime),
+				},
 				"children": &graphql.Field{
 					Type:    graphql.NewList(commentType),
 					Resolve: resolver.ResolveCommentChildren,
@@ -52,6 +55,9 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 			"comments": &graphql.Field{
 				Type:    graphql.NewList(commentType),
 				Resolve: resolver.ResolvePostComments,
+			},
+			"createdAt": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.DateTime),
 			},
 			"commentsDisabled": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.Boolean),

@@ -27,10 +27,10 @@ type Repository interface {
 	CreateComment(postId, parentId, content string) (*models.Comment, error)
 
 	// GetCommentsByPostID возвращает список комментариев для указанного поста.
-	GetCommentsByPostID(postId string) ([]*models.Comment, error)
+	GetCommentsByPostID(postId string, first int64, after *string) ([]*models.Comment, error)
 
 	// GetCommentsByParentID возвращает список дочерних комментариев для указанного комментария.
-	GetCommentsByParentID(parentId string) ([]*models.Comment, error)
+	GetCommentsByParentID(parentId string, first int64, after *string) ([]*models.Comment, error)
 
 	DeletePost(id string) error
 
