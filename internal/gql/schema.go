@@ -113,6 +113,24 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 				},
 				Resolve: resolver.CreateComment,
 			},
+			"deletePost": &graphql.Field{
+				Type: graphql.Boolean,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.ID),
+					},
+				},
+				Resolve: resolver.DeletePost,
+			},
+			"deleteComment": &graphql.Field{
+				Type: graphql.Boolean,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.ID),
+					},
+				},
+				Resolve: resolver.DeleteComment,
+			},
 		},
 	})
 

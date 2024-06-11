@@ -153,3 +153,37 @@ func (repo *PostgresRepository) GetCommentsByParentID(parentId string) ([]*model
 	}
 	return comments, nil
 }
+
+// DeletePost удаляет пост по его ID
+func (repo *PostgresRepository) DeletePost(id string) error {
+	// Сначала удаляем все комментарии к этому посту
+	_, err := repo.db.Exec("DELETE FROM comments WHERE post_id = $1", id)
+	if err != nil {
+		return err
+	}
+
+	// Теперь удаляем сам пост
+	_, err = repo.db.Exec("DELETE FROM posts WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteComment удаляет комментарий по его ID
+func (repo *PostgresRepository) DeleteComment(id string) error {
+	// Сначала удаляем связи этого комментария с дочерними комментариями
+	_, err := repo.db.Exec("DELETE FROM pairs WHERE parent_id = $1 OR child_id = $1", id)
+	if err != nil {
+		return err
+	}
+
+	// Теперь удаляем сам комментарий
+	_, err = repo.db.Exec("DELETE FROM comments WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

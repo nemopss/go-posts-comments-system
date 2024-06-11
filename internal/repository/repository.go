@@ -31,4 +31,8 @@ type Repository interface {
 
 	// GetCommentsByParentID возвращает список дочерних комментариев для указанного комментария.
 	GetCommentsByParentID(parentId string) ([]*models.Comment, error)
+
+	DeletePost(id string) error
+
+	DeleteComment(id string) error
 }

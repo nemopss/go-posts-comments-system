@@ -90,3 +90,55 @@ func (repo *InMemoryRepository) GetCommentsByParentID(parentId string) ([]*model
 	}
 	return comments, nil
 }
+
+// DeletePost удаляет пост по его ID
+func (repo *InMemoryRepository) DeletePost(id string) error {
+	_, ok := repo.posts[id]
+	if !ok {
+		return errors.New("Post not found")
+	}
+
+	// Удаляем все комментарии к этому посту
+	for commentID, comment := range repo.comments {
+		if comment.PostID == id {
+			delete(repo.comments, commentID)
+		}
+	}
+
+	// Теперь удаляем сам пост
+	delete(repo.posts, id)
+	return nil
+}
+
+// DeleteComment удаляет комментарий по его ID
+func (repo *InMemoryRepository) DeleteComment(id string) error {
+	comment, ok := repo.comments[id]
+	if !ok {
+		return errors.New("Comment not found")
+	}
+
+	// Удаляем связи этого комментария с дочерними комментариями
+	for _, childComment := range repo.comments {
+		if childComment.ParentID != nil && *childComment.ParentID == id {
+			childComment.ParentID = nil
+		}
+	}
+
+	// Теперь удаляем сам комментарий
+	delete(repo.comments, id)
+
+	// Если у комментария был родитель, обновляем его список детей
+	if comment.ParentID != nil {
+		parentComment, ok := repo.comments[*comment.ParentID]
+		if ok {
+			for i, child := range parentComment.Children {
+				if child.ID == id {
+					parentComment.Children = append(parentComment.Children[:i], parentComment.Children[i+1:]...)
+					break
+				}
+			}
+		}
+	}
+
+	return nil
+}

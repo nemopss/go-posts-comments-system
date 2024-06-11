@@ -69,3 +69,23 @@ func (r *Resolver) ResolveCommentChildren(p graphql.ResolveParams) (interface{},
 	comment := p.Source.(*models.Comment)
 	return r.repo.GetCommentsByParentID(comment.ID)
 }
+
+// DeletePost удаляет пост по его ID
+func (r *Resolver) DeletePost(params graphql.ResolveParams) (interface{}, error) {
+	id := params.Args["id"].(string)
+	err := r.repo.DeletePost(id)
+	if err != nil {
+		return nil, err
+	}
+	return true, nil
+}
+
+// DeleteComment удаляет комментарий по его ID
+func (r *Resolver) DeleteComment(params graphql.ResolveParams) (interface{}, error) {
+	id := params.Args["id"].(string)
+	err := r.repo.DeleteComment(id)
+	if err != nil {
+		return nil, err
+	}
+	return true, nil
+}
