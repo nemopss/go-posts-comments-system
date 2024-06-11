@@ -16,6 +16,8 @@ func NewPostgresRepository(db *sql.DB) *PostgresRepository {
 	return &PostgresRepository{db: db}
 }
 
+// TODO: Add comments field
+
 // GetPosts возвращает список всех постов
 func (repo *PostgresRepository) GetPosts() ([]*models.Post, error) {
 	rows, err := repo.db.Query("SELECT id, title, content, comments_disabled FROM posts")
@@ -28,7 +30,7 @@ func (repo *PostgresRepository) GetPosts() ([]*models.Post, error) {
 
 	for rows.Next() {
 		post := &models.Post{}
-		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.CommentsDisabled, &post.Comments)
+		err := rows.Scan(&post.ID, &post.Title, &post.Content, &post.CommentsDisabled)
 		if err != nil {
 			return nil, err
 		}

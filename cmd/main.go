@@ -20,7 +20,7 @@ func main() {
 	if !*postgresStorageFlag {
 		rep = inmemory.NewInMemoryRepository()
 	} else {
-		connStr := ""
+		connStr := "postgres://gosuper:Ukflbkby2004@localhost:5432/go-posts-comments-db?sslmode=disable"
 		db, err := sql.Open("postgres", connStr)
 		if err != nil {
 			log.Fatalf("Error opening db: %v", err)
