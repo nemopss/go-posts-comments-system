@@ -16,8 +16,6 @@ func NewPostgresRepository(db *sql.DB) *PostgresRepository {
 	return &PostgresRepository{db: db}
 }
 
-// TODO: Add comments field
-
 // GetPosts возвращает список всех постов
 func (repo *PostgresRepository) GetPosts() ([]*models.Post, error) {
 	rows, err := repo.db.Query("SELECT id, title, content, comments_disabled FROM posts")
@@ -34,8 +32,17 @@ func (repo *PostgresRepository) GetPosts() ([]*models.Post, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		// Получаем комментарии для данного поста
+		comments, err := repo.GetCommentsByPostID(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		post.Comments = comments
+
 		posts = append(posts, post)
 	}
+
 	return posts, nil
 }
 
@@ -63,16 +70,47 @@ func (repo *PostgresRepository) CreatePost(title, content string, commentsDisabl
 // CreateComment создает новый комментарий
 func (repo *PostgresRepository) CreateComment(postId, parentId, content string) (*models.Comment, error) {
 	id := uuid.New().String()
-	_, err := repo.db.Exec("INSERT INTO comments (id, post_id, parent_id, content) VALUES ($1, $2, $3, $4)", id, postId, parentId, content)
+	tx, err := repo.db.Begin()
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback()
+
+	var parentIdSQL interface{}
+	if parentId == "" {
+		parentIdSQL = nil
+	} else {
+		parentIdSQL = parentId
+	}
+
+	_, err = tx.Exec("INSERT INTO comments (id, post_id, parent_id, content) VALUES ($1, $2, $3, $4)", id, postId, parentIdSQL, content)
+	if err != nil {
+		return nil, err
+	}
+
+	if parentId != "" {
+		_, err = tx.Exec("INSERT INTO pairs (parent_id, child_id) VALUES ($1, $2)", parentId, id)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
 	return &models.Comment{ID: id, PostID: postId, ParentID: &parentId, Content: content}, nil
 }
 
 // GetCommentsByPostID возвращает список комментариев для указанного поста
 func (repo *PostgresRepository) GetCommentsByPostID(postId string) ([]*models.Comment, error) {
-	rows, err := repo.db.Query("SELECT id, post_id, parent_id, content FROM comments WHERE post_id=$1 AND parent_id IS NULL", postId)
+	rows, err := repo.db.Query(`
+		SELECT c.id, c.post_id, c.parent_id, c.content 
+		FROM comments c
+		LEFT JOIN pairs p ON c.id = p.child_id
+		WHERE c.post_id = $1 AND c.parent_id IS NULL
+	`, postId)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +131,11 @@ func (repo *PostgresRepository) GetCommentsByPostID(postId string) ([]*models.Co
 
 // GetCommentsByParentID возвращает список дочерних комментариев для указанного комментария
 func (repo *PostgresRepository) GetCommentsByParentID(parentId string) ([]*models.Comment, error) {
-	rows, err := repo.db.Query("SELECT id, post_id, parent_id, content FROM comments WHERE parent_id=$1", parentId)
+	rows, err := repo.db.Query(`
+		SELECT c.id, c.post_id, c.parent_id, c.content
+		FROM comments c
+		WHERE c.parent_id = $1
+	`, parentId)
 	if err != nil {
 		return nil, err
 	}

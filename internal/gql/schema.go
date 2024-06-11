@@ -5,8 +5,6 @@ import (
 	"github.com/nemopss/go-posts-comments-system/internal/repository"
 )
 
-// TODO: fix commentType
-
 // NewSchema создаёт новую GraphQl схему, используя переданный репозиторий
 func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 	// Создаём новый resolver
