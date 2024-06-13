@@ -2,7 +2,6 @@ services:
   app:
     build:
       context: .
-    depends_on:
     command: ["go", "run", "cmd/main.go", "-postgres=false"]
     ports:
       - "8080:8080"
