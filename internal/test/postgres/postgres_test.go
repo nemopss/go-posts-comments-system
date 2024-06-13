@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"log"
+	"os"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -15,7 +16,8 @@ var testDB *sql.DB
 // Инициализация базы данных для тестирования
 func init() {
 	var err error
-	testDB, err = sql.Open("postgres", "postgres://gosuper:Ukflbkby2004@localhost:5432/go-posts-comments-db?sslmode=disable")
+	connStr := "postgres://" + os.Getenv("POSTGRES_USER") + ":" + os.Getenv("POSTGRES_PASSWORD") + "@" + os.Getenv("POSTGRES_HOST") + ":5432/" + os.Getenv("POSTGRES_DB") + "?sslmode=disable"
+	testDB, err = sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}

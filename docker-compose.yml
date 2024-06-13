@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: gosuper
+      POSTGRES_PASSWORD: Ukflbkby2004
+      POSTGRES_DB: go-posts-comments-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql # Добавляем скрипт инициализации
+
+  app:
+    build:
+      context: .
+    depends_on:
+      - db
+    environment:
+      POSTGRES_USER: gosuper
+      POSTGRES_PASSWORD: Ukflbkby2004
+      POSTGRES_DB: go-posts-comments-db
+      POSTGRES_HOST: db
+    command: ["go", "run", "cmd/main.go", "-postgres=true"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+
+volumes:
+  postgres-data:

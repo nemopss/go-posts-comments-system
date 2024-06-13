@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 
 	_ "github.com/lib/pq"
 	"github.com/nemopss/go-posts-comments-system/internal/repository"
@@ -20,7 +21,8 @@ func main() {
 	if !*postgresStorageFlag {
 		rep = inmemory.NewInMemoryRepository()
 	} else {
-		connStr := "postgres://gosuper:Ukflbkby2004@localhost:5432/go-posts-comments-db?sslmode=disable"
+		//connStr := "postgres://gosuper:Ukflbkby2004@localhost:5432/go-posts-comments-db?sslmode=disable"
+		connStr := "postgres://" + os.Getenv("POSTGRES_USER") + ":" + os.Getenv("POSTGRES_PASSWORD") + "@" + os.Getenv("POSTGRES_HOST") + ":5432/" + os.Getenv("POSTGRES_DB") + "?sslmode=disable"
 		db, err := sql.Open("postgres", connStr)
 		if err != nil {
 			log.Fatalf("Error opening db: %v", err)
