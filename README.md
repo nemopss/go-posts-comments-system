@@ -169,29 +169,29 @@ fragment CommentFields on Comment {
 ```
 graphql-comments-system/
 ├── cmd/
-│   └── main.go
+│   └── main.go                   // Точка входа в программу
 ├── internal/
 │   ├── gql/
-│   │   ├── resolvers.go
-│   │   ├── schema.graphql
-│   │   └── schema.go
+│   │   ├── resolvers.go          //Реализация функций, которые будут вызываться при запросах и мутациях GraphQL
+│   │   ├── schema.graphql        // Схема GraqhQL
+│   │   └── schema.go             // Реализация схемы GraphQL
 │   ├── models/
-│   │   ├── comment.go
-│   │   └── post.go
+│   │   ├── comment.go            // Модель комментария
+│   │   └── post.go               // Модель поста
 │   ├── repository/
 │   │   ├── inmemory/
-│   │   │   └── repository.go
+│   │   │   └── repository.go     // Реализация in-memory хранилища
 │   │   ├── postgres/
-│   │   │   └── repository.go
+│   │   │   └── repository.go     // Реализация хранилища в БД PostgreSQL
 │   │   └── repository.go
 │   ├── server/
-│   │   └── server.go
+│   │   └── server.go             // Реализация серверных функций
 │   └── test/
 │       ├── inmemory/
-│       │   └── inmemory_test.go
+│       │   └── inmemory_test.go  // Тесты для in-memory хранилища
 │       └── postgres/
-│           └── postgres_test.go
-├── Dockerfile
+│           └── postgres_test.go  // Тесты для PostgreSQL хранилища
+├── Dockerfile 
 ├── docker-compose-inmemory.yml
 ├── docker-compose-postgres.yml
 ├── init.sql
