@@ -23,7 +23,6 @@ func NewResolver(repo repository.Repository) *Resolver {
 // QueryPosts возвращает список всех постов.
 // Этот метод вызывается при запросе поля `posts` в схеме GraphQL.
 func (r *Resolver) QueryPosts(params graphql.ResolveParams) (interface{}, error) {
-	log.Println("Quering posts...")
 	return r.repo.GetPosts()
 }
 
@@ -31,8 +30,6 @@ func (r *Resolver) QueryPosts(params graphql.ResolveParams) (interface{}, error)
 // Этот метод вызывается при запросе поля `post` с идентификатором `id` в схеме GraphQL.
 func (r *Resolver) QueryPost(params graphql.ResolveParams) (interface{}, error) {
 	id := params.Args["id"].(string)
-
-	log.Println("Quering post...")
 	return r.repo.GetPost(id)
 }
 
@@ -42,7 +39,6 @@ func (r *Resolver) CreatePost(params graphql.ResolveParams) (interface{}, error)
 	title := params.Args["title"].(string)
 	content := params.Args["content"].(string)
 	commentsDisabled := params.Args["commentsDisabled"].(bool)
-	log.Println("Creating post...")
 	return r.repo.CreatePost(title, content, commentsDisabled)
 }
 
@@ -52,24 +48,29 @@ func (r *Resolver) CreateComment(params graphql.ResolveParams) (interface{}, err
 	postId := params.Args["postId"].(string)
 	parentId := params.Args["parentId"].(string)
 	content := params.Args["content"].(string)
-	log.Println("Creating comment...")
 	return r.repo.CreateComment(postId, parentId, content)
 }
 
 // ResolvePostComments возвращает список комментариев для заданного поста с пагинацией
 func (r *Resolver) ResolvePostComments(p graphql.ResolveParams) (interface{}, error) {
 	post := p.Source.(*models.Post)
-	first, _ := p.Args["first"].(int64)
+	first, _ := p.Args["first"].(int)
 	after, _ := p.Args["after"].(string)
-	return r.repo.GetCommentsByPostID(post.ID, first, &after)
+	if after == "" {
+		return r.repo.GetCommentsByPostID(post.ID, int64(first), nil)
+	}
+	return r.repo.GetCommentsByPostID(post.ID, int64(first), &after)
 }
 
 // ResolveCommentChildren возвращает список дочерних комментариев для заданного комментария с пагинацией
 func (r *Resolver) ResolveCommentChildren(p graphql.ResolveParams) (interface{}, error) {
 	comment := p.Source.(*models.Comment)
-	first, _ := p.Args["first"].(int64)
+	first, _ := p.Args["first"].(int)
 	after, _ := p.Args["after"].(string)
-	return r.repo.GetCommentsByParentID(comment.ID, first, &after)
+	if after == "" {
+		return r.repo.GetCommentsByParentID(comment.ID, int64(first), nil)
+	}
+	return r.repo.GetCommentsByParentID(comment.ID, int64(first), &after)
 }
 
 // DeletePost удаляет пост по его ID

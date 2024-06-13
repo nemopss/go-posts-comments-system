@@ -27,7 +27,7 @@ func NewInMemoryRepository() *InMemoryRepository {
 
 // GetPosts возвращает все посты из репозитория.
 func (repo *InMemoryRepository) GetPosts() ([]*models.Post, error) {
-	log.Println("GetPosts called")
+	log.Println("Querying posts...")
 	posts := []*models.Post{}
 	for _, post := range repo.posts {
 		posts = append(posts, post)
@@ -37,6 +37,7 @@ func (repo *InMemoryRepository) GetPosts() ([]*models.Post, error) {
 
 // GetPost возвращает пост по его ID. Если пост не найден, возвращает ошибку.
 func (repo *InMemoryRepository) GetPost(id string) (*models.Post, error) {
+	log.Println("Querying post with ID:", id)
 	post, ok := repo.posts[id]
 	if !ok {
 		return nil, errors.New("Post not found")
@@ -46,8 +47,8 @@ func (repo *InMemoryRepository) GetPost(id string) (*models.Post, error) {
 
 // CreatePost создает новый пост и добавляет его в репозиторий.
 func (repo *InMemoryRepository) CreatePost(title, content string, commentsDisabled bool) (*models.Post, error) {
-	log.Println("CreatePost called")
 	id := uuid.New().String()
+	log.Println("Creating post with ID:", id)
 	createdAt := time.Now()
 	post := &models.Post{
 		ID:               id,
@@ -57,14 +58,17 @@ func (repo *InMemoryRepository) CreatePost(title, content string, commentsDisabl
 		CreatedAt:        createdAt,
 	}
 	repo.posts[id] = post
-	log.Println("Created post with ID:", id)
 	return post, nil
 }
 
 // CreateComment создает новый комментарий и добавляет его в репозиторий.
 func (repo *InMemoryRepository) CreateComment(postId, parentId, content string) (*models.Comment, error) {
+	// Ограничение в 2000 символов на комментарий
+	if len(content) > 2000 {
+		return nil, errors.New("комментарий не может превышать 2000 символов")
+	}
 	id := uuid.New().String()
-	log.Printf("Created comment with ID: %v\n", id)
+	log.Println("Creating comment with ID:", id)
 	createdAt := time.Now()
 	comment := &models.Comment{
 		ID:        id,
@@ -82,22 +86,25 @@ func (repo *InMemoryRepository) CreateComment(postId, parentId, content string) 
 
 // GetCommentsByPostID возвращает список комментариев для указанного поста с пагинацией
 func (repo *InMemoryRepository) GetCommentsByPostID(postId string, first int64, after *string) ([]*models.Comment, error) {
-	postComments := []*models.Comment{}
+	log.Println("Getting comments on post with ID:", postId)
+	var allComments []*models.Comment
+
+	comments := []*models.Comment{}
 	for _, comment := range repo.comments {
-		if comment.PostID == postId && comment.ParentID == nil {
-			postComments = append(postComments, comment)
+		if comment.PostID == postId && (comment.ParentID == nil || *comment.ParentID == "") {
+			comments = append(comments, comment)
 		}
 	}
 
 	// Сортируем комментарии по времени создания
-	sort.Slice(postComments, func(i, j int) bool {
-		return postComments[i].CreatedAt.Before(postComments[j].CreatedAt)
+	sort.Slice(allComments, func(i, j int) bool {
+		return allComments[i].CreatedAt.Before(allComments[j].CreatedAt)
 	})
 
 	// Применяем пагинацию
 	startIndex := 0
 	if after != nil {
-		for i, comment := range postComments {
+		for i, comment := range comments {
 			if comment.ID > *after {
 				startIndex = i + 1
 				break
@@ -106,15 +113,17 @@ func (repo *InMemoryRepository) GetCommentsByPostID(postId string, first int64, 
 	}
 
 	endIndex := int64(startIndex) + first
-	if endIndex > int64(len(postComments)) {
-		endIndex = int64(len(postComments))
+	if endIndex > int64(len(comments)) {
+		endIndex = int64(len(comments))
 	}
 
-	return postComments[startIndex:endIndex], nil
+	return comments[startIndex:endIndex], nil
+
 }
 
 // GetCommentsByParentID возвращает список дочерних комментариев для указанного комментария с пагинацией
 func (repo *InMemoryRepository) GetCommentsByParentID(parentId string, first int64, after *string) ([]*models.Comment, error) {
+	log.Println("Getting comments from parent with ID:", parentId)
 	parentComment, ok := repo.comments[parentId]
 	if !ok {
 		return nil, fmt.Errorf("comment with id %s not found", parentId)
@@ -135,16 +144,12 @@ func (repo *InMemoryRepository) GetCommentsByParentID(parentId string, first int
 		endIndex = int64(len(parentComment.Children))
 	}
 
-	log.Printf("Range of children: %v", len(parentComment.Children))
-	log.Printf("Returning comments by parent ID: %v. SI: %v, EI: %v, first: %v\n", parentId, startIndex, endIndex, first)
-	for i, comm := range parentComment.Children[startIndex:endIndex] {
-		log.Printf("#%v Comment: %v", i, comm.Content)
-	}
 	return parentComment.Children[startIndex:endIndex], nil
 }
 
 // DeletePost удаляет пост по его ID
 func (repo *InMemoryRepository) DeletePost(id string) error {
+	log.Println("Deleting post with ID:", id)
 	_, ok := repo.posts[id]
 	if !ok {
 		return errors.New("Post not found")
@@ -164,6 +169,7 @@ func (repo *InMemoryRepository) DeletePost(id string) error {
 
 // DeleteComment удаляет комментарий по его ID
 func (repo *InMemoryRepository) DeleteComment(id string) error {
+	log.Println("Deleting comment with ID:", id)
 	comment, ok := repo.comments[id]
 	if !ok {
 		return errors.New("Comment not found")
@@ -172,7 +178,7 @@ func (repo *InMemoryRepository) DeleteComment(id string) error {
 	// Удаляем связи этого комментария с дочерними комментариями
 	for _, childComment := range repo.comments {
 		if childComment.ParentID != nil && *childComment.ParentID == id {
-			childComment.ParentID = nil
+			delete(repo.comments, childComment.ID)
 		}
 	}
 

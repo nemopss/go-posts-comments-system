@@ -32,7 +32,16 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 					Type: graphql.NewNonNull(graphql.DateTime),
 				},
 				"children": &graphql.Field{
-					Type:    graphql.NewList(commentType),
+					Type: graphql.NewList(commentType),
+					Args: graphql.FieldConfigArgument{
+						"first": &graphql.ArgumentConfig{
+							Type: graphql.NewNonNull(graphql.Int),
+						},
+						"after": &graphql.ArgumentConfig{
+							Type: graphql.String,
+						},
+					},
+
 					Resolve: resolver.ResolveCommentChildren,
 				},
 			}
@@ -53,7 +62,16 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 				Type: graphql.NewNonNull(graphql.String),
 			},
 			"comments": &graphql.Field{
-				Type:    graphql.NewList(commentType),
+				Type: graphql.NewList(commentType),
+				Args: graphql.FieldConfigArgument{
+					"first": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Int),
+					},
+					"after": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+				},
+
 				Resolve: resolver.ResolvePostComments,
 			},
 			"createdAt": &graphql.Field{
