@@ -24,12 +24,7 @@ type Mutation {
   createComment(postId: ID!, parentId: ID, content: String!): Comment
 }
 
-type Subscription {
-  commentAdded(postId: ID!): Comment!
-}
-
 schema {
   query: Query
   mutation: Mutation
-  subscription: Subscription
 }
