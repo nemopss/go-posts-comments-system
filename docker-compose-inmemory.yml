@@ -21,7 +21,7 @@ services:
       POSTGRES_PASSWORD: Ukflbkby2004
       POSTGRES_DB: go-posts-comments-db
       POSTGRES_HOST: db
-    command: ["go", "run", "cmd/main.go", "-postgres=true"]
+    command: ["go", "run", "cmd/main.go", "-postgres=false"]
     ports:
       - "8080:8080"
     volumes:

@@ -20,6 +20,7 @@ func main() {
 	var rep repository.Repository
 	if !*postgresStorageFlag {
 		rep = inmemory.NewInMemoryRepository()
+		log.Println("In-memory storage active...")
 	} else {
 		//connStr := "postgres://gosuper:Ukflbkby2004@localhost:5432/go-posts-comments-db?sslmode=disable"
 		connStr := "postgres://" + os.Getenv("POSTGRES_USER") + ":" + os.Getenv("POSTGRES_PASSWORD") + "@" + os.Getenv("POSTGRES_HOST") + ":5432/" + os.Getenv("POSTGRES_DB") + "?sslmode=disable"
@@ -28,7 +29,7 @@ func main() {
 			log.Fatalf("Error opening db: %v", err)
 		}
 		rep = postgres.NewPostgresRepository(db)
-
+		log.Println("PostgreSQL storage active...")
 	}
 	srv := server.NewServer(rep)
 	http.Handle("/graphql", srv.Handler())
