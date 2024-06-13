@@ -172,7 +172,7 @@ graphql-comments-system/
 │   └── main.go                   // Точка входа в программу
 ├── internal/
 │   ├── gql/
-│   │   ├── resolvers.go          //Реализация функций, которые будут вызываться при запросах и мутациях GraphQL
+│   │   ├── resolvers.go          // Реализация функций, которые будут вызываться при запросах и мутациях GraphQL
 │   │   ├── schema.graphql        // Схема GraqhQL
 │   │   └── schema.go             // Реализация схемы GraphQL
 │   ├── models/
