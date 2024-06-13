@@ -8,7 +8,7 @@ import (
 	"github.com/nemopss/go-posts-comments-system/internal/repository/inmemory"
 )
 
-// Utility functions to create posts and comments
+// Функция для создания поста в in-memory хранилище
 func createPost(repo *inmemory.InMemoryRepository, title, content string, commentsDisabled bool) *models.Post {
 	post, err := repo.CreatePost(title, content, commentsDisabled)
 	if err != nil {
@@ -17,6 +17,7 @@ func createPost(repo *inmemory.InMemoryRepository, title, content string, commen
 	return post
 }
 
+// Функция для создания комментария в in-memory хранилище
 func createComment(repo *inmemory.InMemoryRepository, postId, parentId, content string) *models.Comment {
 	comment, err := repo.CreateComment(postId, parentId, content)
 	if err != nil {
@@ -25,11 +26,11 @@ func createComment(repo *inmemory.InMemoryRepository, postId, parentId, content 
 	return comment
 }
 
-// Test for GetPosts
+// Тест GetPosts
 func TestGetPosts_InMemory(t *testing.T) {
 	repo := inmemory.NewInMemoryRepository()
 
-	// Create some posts
+	// Создание постов
 	createPost(repo, "Test Post 1", "This is the first test post", false)
 	createPost(repo, "Test Post 2", "This is the second test post", true)
 
@@ -42,11 +43,11 @@ func TestGetPosts_InMemory(t *testing.T) {
 	}
 }
 
-// Test for GetPost
+// Тест GetPost
 func TestGetPost_InMemory(t *testing.T) {
 	repo := inmemory.NewInMemoryRepository()
 
-	// Create a post
+	// Создание поста
 	post := createPost(repo, "Test Post", "This is a test post", false)
 
 	fetchedPost, err := repo.GetPost(post.ID)
@@ -58,11 +59,11 @@ func TestGetPost_InMemory(t *testing.T) {
 	}
 }
 
-// Test for CreatePost
+// Тест CreatePost
 func TestCreatePost_InMemory(t *testing.T) {
 	repo := inmemory.NewInMemoryRepository()
 
-	// Create a post
+	// Создание поста
 	post := createPost(repo, "Test Post", "This is a test post", false)
 
 	if post.Title != "Test Post" {
@@ -76,11 +77,11 @@ func TestCreatePost_InMemory(t *testing.T) {
 	}
 }
 
-// Test for CreateComment
+// Тест CreateComment
 func TestCreateComment_InMemory(t *testing.T) {
 	repo := inmemory.NewInMemoryRepository()
 
-	// Create a post and a comment
+	// Создание поста и комментария к нему
 	post := createPost(repo, "Test Post", "This is a test post", false)
 	comment := createComment(repo, post.ID, "", "This is a test comment")
 
@@ -92,11 +93,11 @@ func TestCreateComment_InMemory(t *testing.T) {
 	}
 }
 
-// Test for GetCommentsByPostID
+// Тест GetCommentsByPostID
 func TestGetCommentsByPostID_InMemory(t *testing.T) {
 	repo := inmemory.NewInMemoryRepository()
 
-	// Create a post and some comments
+	// Создание поста и комментариев к нему
 	post := createPost(repo, "Test Post", "This is a test post", false)
 	createComment(repo, post.ID, "", "Comment 1")
 	createComment(repo, post.ID, "", "Comment 2")
@@ -111,11 +112,11 @@ func TestGetCommentsByPostID_InMemory(t *testing.T) {
 	}
 }
 
-// Test for GetCommentsByParentID with pagination
+// Тест GetCommentsByParentID with с пагинацией
 func TestGetCommentsByParentID_InMemory(t *testing.T) {
 	repo := inmemory.NewInMemoryRepository()
 
-	// Create a post and some nested comments
+	// Создание поста и нескольких вложенных комментариев
 	post := createPost(repo, "Test Post", "This is a test post", false)
 	comment1 := createComment(repo, post.ID, "", "Comment 1")
 	_ = createComment(repo, post.ID, comment1.ID, "Comment 2")
@@ -123,7 +124,7 @@ func TestGetCommentsByParentID_InMemory(t *testing.T) {
 	_ = createComment(repo, post.ID, comment1.ID, "Comment 4")
 	_ = createComment(repo, post.ID, comment1.ID, "Comment 5")
 
-	// Check fetching comments with pagination
+	// Проверка полученных комментариев
 	comments, err := repo.GetCommentsByParentID(comment1.ID, 2, nil)
 	if err != nil {
 		t.Errorf("failed to get comments: %v", err)

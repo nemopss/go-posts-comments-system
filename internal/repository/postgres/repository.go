@@ -38,7 +38,7 @@ func (repo *PostgresRepository) GetPosts() ([]*models.Post, error) {
 			return nil, err
 		}
 
-		// Получаем комментарии для данного поста
+		// Получение комментариев для данного поста
 		comments, err := repo.GetCommentsByPostID(post.ID, 0, nil)
 		if err != nil {
 			return nil, err
@@ -65,9 +65,9 @@ func (repo *PostgresRepository) GetPost(id string) (*models.Post, error) {
 
 // CreatePost создает новый пост
 func (repo *PostgresRepository) CreatePost(title, content string, commentsDisabled bool) (*models.Post, error) {
-	id := uuid.New().String()
+	id := uuid.New().String() // Генерация нового уникального ID для поста
 	log.Println("Creating post with ID:", id)
-	createdAt := time.Now()
+	createdAt := time.Now() // Текущее время как время создания поста
 	_, err := repo.db.Exec("INSERT INTO posts (id, title, content, comments_disabled, created_at) VALUES ($1, $2, $3, $4, $5)", id, title, content, commentsDisabled, createdAt)
 	if err != nil {
 		return nil, err
@@ -94,9 +94,9 @@ func (repo *PostgresRepository) CreateComment(postId, parentId, content string) 
 	if commentsDisabled {
 		return nil, errors.New("Comments are disabled on this post!")
 	}
-	id := uuid.New().String()
+	id := uuid.New().String() // Генерация нового уникального ID для комментария
 	log.Println("Creating comment with ID:", id)
-	createdAt := time.Now()
+	createdAt := time.Now() // Текущее время как время создания комментария
 	tx, err := repo.db.Begin()
 	if err != nil {
 		return nil, err
@@ -256,7 +256,7 @@ func (repo *PostgresRepository) DeleteComment(id string) error {
 	}
 	defer tx.Rollback()
 
-	// Удаляем все вложенные комментарии
+	// Удаление всех вложенных комментариев
 	err = repo.deleteChildComments(tx, id)
 	if err != nil {
 		return err
@@ -268,7 +268,7 @@ func (repo *PostgresRepository) DeleteComment(id string) error {
 		return err
 	}
 
-	// Теперь удаляем сам комментарий
+	// Удаление самого комментарий
 	_, err = tx.Exec("DELETE FROM comments WHERE id = $1", id)
 	if err != nil {
 		return err

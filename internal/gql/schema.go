@@ -12,6 +12,7 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 
 	var commentType *graphql.Object
 
+	// Определение типа comment для GraphQL схемы
 	commentType = graphql.NewObject(graphql.ObjectConfig{
 		Name: "Comment",
 		Fields: graphql.FieldsThunk(func() graphql.Fields {
@@ -48,7 +49,7 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 		}),
 	})
 
-	// Определяем тип post для GraphQl схемы
+	// Определение типа post для GraphQL схемы
 	postType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Post",
 		Fields: graphql.Fields{
@@ -83,7 +84,7 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 		},
 	})
 
-	// Определяем корневой тип Query для GraphQl схемы
+	// Определение корневого типа Query для GraphQL схемы
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
@@ -103,7 +104,7 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 		},
 	})
 
-	// Определяем тип Mutation для GraphQl схемы
+	// Определение типа Mutation для GraphQL схемы
 	mutationType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Mutation",
 		Fields: graphql.Fields{
@@ -158,24 +159,12 @@ func NewSchema(repo repository.Repository) (graphql.Schema, error) {
 		},
 	})
 
-	subscriptionType := graphql.NewObject(graphql.ObjectConfig{
-		Name: "Subscription",
-		Fields: graphql.Fields{
-			"newPost": &graphql.Field{
-				Type: postType,
-			},
-			"newComment": &graphql.Field{
-				Type: commentType,
-			},
-		},
-	})
-
-	// Создаём конфиг схемы
+	// Создание конфигурации схемы
 	schemaConfig := graphql.SchemaConfig{
-		Query:        queryType,
-		Mutation:     mutationType,
-		Subscription: subscriptionType,
+		Query:    queryType,
+		Mutation: mutationType,
 	}
 
+	// Создание и возврат новой схемы GraphQL
 	return graphql.NewSchema(schemaConfig)
 }

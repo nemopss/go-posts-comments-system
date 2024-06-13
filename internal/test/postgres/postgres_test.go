@@ -3,7 +3,6 @@ package postgres
 import (
 	"database/sql"
 	"log"
-	"os"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -16,8 +15,7 @@ var testDB *sql.DB
 // Инициализация базы данных для тестирования
 func init() {
 	var err error
-	connStr := "postgres://" + os.Getenv("POSTGRES_USER") + ":" + os.Getenv("POSTGRES_PASSWORD") + "@" + os.Getenv("POSTGRES_HOST") + ":5432/" + os.Getenv("POSTGRES_DB") + "?sslmode=disable"
-	testDB, err = sql.Open("postgres", connStr)
+	testDB, err = sql.Open("postgres", "postgres://gosuper:Ukflbkby2004@localhost:5432/go-posts-comments-db?sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,26 +35,30 @@ func cleanDatabase(db *sql.DB) {
 func TestPostgresRepository(t *testing.T) {
 	repo := postgres.NewPostgresRepository(testDB)
 
+	// Тест GetCommentsByPostID
 	t.Run("TestGetCommentsByPostID_Postgres", func(t *testing.T) {
 		cleanDatabase(testDB)
+		//Создание поста
 		post, err := repo.CreatePost("Title", "Content", false)
 		assert.NoError(t, err)
-
+		// Создание комментариев
 		_, err = repo.CreateComment(post.ID, "", "Comment 1")
 		assert.NoError(t, err)
 		_, err = repo.CreateComment(post.ID, "", "Comment 2")
 		assert.NoError(t, err)
-
+		// Проверка получения комментариев
 		comments, err := repo.GetCommentsByPostID(post.ID, 10, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(comments))
 	})
-
+	// Тест GetCommentsByParentID
 	t.Run("TestGetCommentsByParentID_Postgres", func(t *testing.T) {
 		cleanDatabase(testDB)
+		//Создание поста
 		post, err := repo.CreatePost("Title", "Content", false)
 		assert.NoError(t, err)
 
+		// Создание комментариев
 		comment1, err := repo.CreateComment(post.ID, "", "Comment 1")
 		assert.NoError(t, err)
 		_, err = repo.CreateComment(post.ID, comment1.ID, "Comment 1.1")
@@ -64,27 +66,32 @@ func TestPostgresRepository(t *testing.T) {
 		_, err = repo.CreateComment(post.ID, comment1.ID, "Comment 1.2")
 		assert.NoError(t, err)
 
+		// Проверка получения комментариев
 		comments, err := repo.GetCommentsByParentID(comment1.ID, 10, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(comments))
 	})
 
+	// Проверка удаления поста
 	t.Run("TestDeletePost_Postgres", func(t *testing.T) {
 		cleanDatabase(testDB)
+		//Создание поста
 		post, err := repo.CreatePost("Title", "Content", false)
 		assert.NoError(t, err)
 
+		// Создание комментариев
 		_, err = repo.CreateComment(post.ID, "", "Comment 1")
 		assert.NoError(t, err)
 		_, err = repo.CreateComment(post.ID, "", "Comment 2")
 		assert.NoError(t, err)
 
+		// Удаление поста
 		err = repo.DeletePost(post.ID)
 		assert.NoError(t, err)
 
 		_, err = repo.GetPost(post.ID)
 		assert.Error(t, err)
-
+		// Проверка на отсутствие поста
 		comments, err := repo.GetCommentsByPostID(post.ID, 10, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(comments))
@@ -92,9 +99,12 @@ func TestPostgresRepository(t *testing.T) {
 
 	t.Run("TestDeleteComment_Postgres", func(t *testing.T) {
 		cleanDatabase(testDB)
+
+		//Создание поста
 		post, err := repo.CreatePost("Title", "Content", false)
 		assert.NoError(t, err)
 
+		// Создание комментариев
 		comment1, err := repo.CreateComment(post.ID, "", "Comment 1")
 		assert.NoError(t, err)
 		comment2, err := repo.CreateComment(post.ID, comment1.ID, "Comment 1.1")
@@ -106,7 +116,7 @@ func TestPostgresRepository(t *testing.T) {
 		err = repo.DeleteComment(comment1.ID)
 		assert.NoError(t, err)
 
-		// Убедитесь, что комментарий действительно удален
+		// Проверка на удаление комментария
 		comments, err := repo.GetCommentsByPostID(post.ID, 10, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, 0, len(comments))
