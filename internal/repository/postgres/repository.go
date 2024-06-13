@@ -81,6 +81,19 @@ func (repo *PostgresRepository) CreateComment(postId, parentId, content string) 
 	if len(content) > 2000 {
 		return nil, errors.New("комментарий не может превышать 2000 символов")
 	}
+	var commentsDisabled bool
+	err := repo.db.QueryRow("SELECT comments_disabled FROM posts WHERE id = $1", postId).Scan(&commentsDisabled)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New("Post not found!")
+		}
+		return nil, err
+	}
+
+	// Проверка, отключены ли комментарии для поста
+	if commentsDisabled {
+		return nil, errors.New("Comments are disabled on this post!")
+	}
 	id := uuid.New().String()
 	log.Println("Creating comment with ID:", id)
 	createdAt := time.Now()

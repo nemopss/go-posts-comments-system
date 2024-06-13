@@ -63,6 +63,9 @@ func (repo *InMemoryRepository) CreatePost(title, content string, commentsDisabl
 
 // CreateComment создает новый комментарий и добавляет его в репозиторий.
 func (repo *InMemoryRepository) CreateComment(postId, parentId, content string) (*models.Comment, error) {
+	if repo.posts[postId].CommentsDisabled == true {
+		return nil, errors.New("Comments are disabled on this post!")
+	}
 	// Ограничение в 2000 символов на комментарий
 	if len(content) > 2000 {
 		return nil, errors.New("комментарий не может превышать 2000 символов")
